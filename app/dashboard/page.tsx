@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { BriefingCard } from '@/components/dashboard/BriefingCard'
 import { ActionCard } from '@/components/dashboard/ActionCard'
+import { ActionExecutionDialog } from '@/components/dashboard/ActionExecutionDialog'
 import { VoiceOrb } from '@/components/voice/VoiceOrb'
 import { mockLeads, mockTransactions, mockTasks, mockProperties, mockEvents, agentProfile } from '@/lib/mock-data'
 import { generateRecommendedActions } from '@/lib/scoring'
@@ -19,7 +20,6 @@ import { useVoice } from '@/hooks/useVoice'
 import { getBriefingScript, getActionScript, getConfirmationScript } from '@/lib/voice-scripts'
 import type { Lead } from '@/types/lead'
 import type { RecommendedAction, Transaction } from '@/types/action'
-import type { Property } from '@/types/property'
 
 // ── Scoring engine — deterministic, called once at render ────────────────────
 
@@ -135,6 +135,7 @@ const TASK_ICON_MAP = {
 
 export default function DashboardPage() {
   const [panel, setPanel] = useState<PanelContent>(null)
+  const [executionAction, setExecutionAction] = useState<RecommendedAction | null>(null)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
   const { state: voiceState, activeId: voiceActiveId, speak, stop } = useVoice()
 
@@ -152,6 +153,16 @@ export default function DashboardPage() {
       speak(getConfirmationScript(action), `confirm-${action.id}`)
     },
     [speak],
+  )
+
+  const completeExecution = useCallback(
+    (action: RecommendedAction) => {
+      markDone(action)
+      setPanel((prev) =>
+        prev?.kind === 'action' && prev.data.id === action.id ? null : prev
+      )
+    },
+    [markDone],
   )
 
   const openWhyThis = (action: RecommendedAction) =>
@@ -173,6 +184,16 @@ export default function DashboardPage() {
     },
     [speak],
   )
+
+  const executionLead = executionAction?.leadId
+    ? mockLeads.find((l) => l.id === executionAction.leadId) ?? null
+    : null
+  const executionProperty = executionAction?.propertyId
+    ? mockProperties.find((p) => p.id === executionAction.propertyId) ?? null
+    : null
+  const executionTransaction = executionAction?.transactionId
+    ? mockTransactions.find((t) => t.id === executionAction.transactionId) ?? null
+    : null
 
   return (
     <div className="flex flex-1 min-h-0">
@@ -287,7 +308,7 @@ export default function DashboardPage() {
                   isSpeaking={voiceActiveId === actionVoiceId && voiceState === 'playing'}
                   isVoiceLoading={voiceActiveId === actionVoiceId && voiceState === 'loading'}
                   onWhyThis={openWhyThis}
-                  onExecute={markDone}
+                  onExecute={setExecutionAction}
                   onSnooze={() => setPanel(null)}
                   onHearAction={hearAction}
                 />
@@ -590,6 +611,19 @@ export default function DashboardPage() {
         onActivate={hearBriefing}
         onStop={stop}
       />
+
+      {executionAction && (
+        <ActionExecutionDialog
+          key={executionAction.id}
+          open
+          action={executionAction}
+          lead={executionLead}
+          property={executionProperty}
+          transaction={executionTransaction}
+          onClose={() => setExecutionAction(null)}
+          onConfirm={completeExecution}
+        />
+      )}
 
       {/* ── Detail Panel ──────────────────────────────────────────────────── */}
       {panel && (

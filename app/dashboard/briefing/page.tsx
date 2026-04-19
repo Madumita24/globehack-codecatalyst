@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import DetailPanel from '@/components/layout/DetailPanel'
 import { BriefingCard } from '@/components/dashboard/BriefingCard'
 import { ActionCard } from '@/components/dashboard/ActionCard'
+import { ActionExecutionDialog } from '@/components/dashboard/ActionExecutionDialog'
 import { VoiceOrb } from '@/components/voice/VoiceOrb'
 import { generateRecommendedActions } from '@/lib/scoring'
 import { mockLeads, mockProperties, mockEvents, mockTransactions } from '@/lib/mock-data'
@@ -27,6 +28,7 @@ const liveActions = generateRecommendedActions(
 
 export default function BriefingPage() {
   const [selectedAction, setSelectedAction] = useState<RecommendedAction | null>(null)
+  const [executionAction, setExecutionAction] = useState<RecommendedAction | null>(null)
   const [doneIds, setDoneIds] = useState<Set<string>>(new Set())
   const { state: voiceState, activeId: voiceActiveId, speak, stop } = useVoice()
 
@@ -39,6 +41,13 @@ export default function BriefingPage() {
     [selectedAction, speak],
   )
 
+  const completeExecution = useCallback(
+    (action: RecommendedAction) => {
+      markDone(action)
+    },
+    [markDone],
+  )
+
   const visibleActions = liveActions.filter(a => !doneIds.has(a.id))
 
   const lead = selectedAction?.leadId
@@ -49,6 +58,15 @@ export default function BriefingPage() {
     : null
   const transaction = selectedAction?.transactionId
     ? mockTransactions.find(t => t.id === selectedAction.transactionId) ?? null
+    : null
+  const executionLead = executionAction?.leadId
+    ? mockLeads.find(l => l.id === executionAction.leadId) ?? null
+    : null
+  const executionProperty = executionAction?.propertyId
+    ? mockProperties.find(p => p.id === executionAction.propertyId) ?? null
+    : null
+  const executionTransaction = executionAction?.transactionId
+    ? mockTransactions.find(t => t.id === executionAction.transactionId) ?? null
     : null
 
   const handleWhyThis = useCallback((action: RecommendedAction) => {
@@ -128,7 +146,7 @@ export default function BriefingPage() {
                 isSpeaking={voiceActiveId === `action-${action.id}` && voiceState === 'playing'}
                 isVoiceLoading={voiceActiveId === `action-${action.id}` && voiceState === 'loading'}
                 onWhyThis={handleWhyThis}
-                onExecute={markDone}
+                onExecute={setExecutionAction}
                 onSnooze={() => markDone(action)}
                 onHearAction={handleHearAction}
               />
@@ -151,6 +169,19 @@ export default function BriefingPage() {
         onActivate={handleHearBriefing}
         onStop={stop}
       />
+
+      {executionAction && (
+        <ActionExecutionDialog
+          key={executionAction.id}
+          open
+          action={executionAction}
+          lead={executionLead}
+          property={executionProperty}
+          transaction={executionTransaction}
+          onClose={() => setExecutionAction(null)}
+          onConfirm={completeExecution}
+        />
+      )}
 
       {/* Reasoning Panel ───────────────────────────────────────────────── */}
       <DetailPanel

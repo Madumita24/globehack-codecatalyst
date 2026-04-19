@@ -99,8 +99,16 @@ export function ActionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
               <span className="text-sm font-semibold text-gray-900">{action.title}</span>
+              {isDone && (
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  Done
+                </span>
+              )}
               {lead && (
                 <span className="text-xs text-gray-400">· Score {lead.score}</span>
+              )}
+              {property && (
+                <span className="text-xs text-gray-400">· {property.city}</span>
               )}
             </div>
             <p className="text-xs text-gray-500 leading-relaxed">{action.summary}</p>
@@ -160,7 +168,7 @@ export function ActionCard({
             onClick={() => onExecute(action)}
           >
             <CheckCircle2 className="w-3 h-3" />
-            {cfg.cta}
+            {isDone ? 'Completed' : cfg.cta}
           </Button>
 
           <Button
