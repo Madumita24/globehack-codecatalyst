@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAssistantDecision } from '@/lib/ai/assistant'
 import { getEmailErrorMessage } from '@/lib/email/errors'
 import { sendLeadEmail } from '@/lib/email/ses'
-import { getSmsErrorMessage } from '@/lib/sms/errors'
-import { sendLeadSms } from '@/lib/sms/sns'
 import type { AssistantRequest } from '@/types/assistant'
 
 export async function POST(req: NextRequest) {
@@ -54,33 +52,15 @@ async function completeAssistantCommunication(decision: Awaited<ReturnType<typeo
       }
     }
 
-    try {
-      const result = await sendLeadSms({
-        to: communication.recipientPhone,
-        body: communication.body,
-      })
-
-      return {
-        ...decision,
-        voiceResponse: `AWS accepted the text to ${communication.recipientName} for delivery. If it does not arrive, check SNS sandbox, opt-out, and US origination settings.`,
-        communication: {
-          ...communication,
-          deliveryStatus: 'accepted' as const,
-          messageId: result.messageId ?? null,
-          launchHref: null,
-        },
-      }
-    } catch (error) {
-      const message = getSmsErrorMessage(error)
-      return {
-        ...decision,
-        voiceResponse: `I could not send that text to ${communication.recipientName}. ${message}`,
-        communication: {
-          ...communication,
-          deliveryStatus: 'failed' as const,
-          error: message,
-        },
-      }
+    return {
+      ...decision,
+      voiceResponse: `I prepared a text for ${communication.recipientName}. Review it, then tap send in your messages app.`,
+      communication: {
+        ...communication,
+        deliveryStatus: 'prepared' as const,
+        launchHref: buildSmsHref(communication.recipientPhone, communication.body),
+        error: null,
+      },
     }
   }
 
@@ -125,4 +105,14 @@ async function completeAssistantCommunication(decision: Awaited<ReturnType<typeo
       },
     }
   }
+}
+
+function buildSmsHref(phone: string, body: string) {
+  return `sms:${normalizePhone(phone)}?body=${encodeURIComponent(body)}`
+}
+
+function normalizePhone(phone: string) {
+  const trimmed = phone.trim()
+  if (trimmed.startsWith('+')) return `+${trimmed.slice(1).replace(/\D/g, '')}`
+  return trimmed.replace(/\D/g, '')
 }

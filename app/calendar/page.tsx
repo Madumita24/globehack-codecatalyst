@@ -38,52 +38,32 @@ type CalendarEvent = {
   type?: Task['type']
 }
 
-const DEMO_DATE = '2026-04-18'
-const WEEK_DAYS = [
-  { label: 'Mon', date: '2026-04-13', day: 13 },
-  { label: 'Tue', date: '2026-04-14', day: 14 },
-  { label: 'Wed', date: '2026-04-15', day: 15 },
-  { label: 'Thu', date: '2026-04-16', day: 16 },
-  { label: 'Fri', date: '2026-04-17', day: 17 },
-  { label: 'Sat', date: '2026-04-18', day: 18 },
-  { label: 'Sun', date: '2026-04-19', day: 19 },
-]
-const MONTH_DAYS = Array.from({ length: 30 }, (_, idx) => idx + 1)
+type WeekDay = {
+  label: string
+  date: string
+  day: number
+}
+
+type MonthDay = {
+  date: string
+  day: number
+}
+
 const WORK_WINDOWS = [
   { label: 'Morning', start: 9 * 60, end: 12 * 60 },
   { label: 'Afternoon', start: 13 * 60, end: 17 * 60 },
 ]
 const TIME_ROWS = Array.from({ length: 9 }, (_, index) => 9 * 60 + index * 60)
 
-const appointments: CalendarEvent[] = [
-  {
-    id: 'appt-robert-11',
-    source: 'appointment',
-    title: 'Showing: 182 Saint Peter St',
-    owner: 'Robert Nguyen',
-    date: DEMO_DATE,
-    start: 11 * 60,
-    end: 11 * 60 + 45,
-    note: 'Client showing already booked from IDX request.',
-  },
-  {
-    id: 'appt-annette-2',
-    source: 'appointment',
-    title: 'Showing: 26096 Dougherty Pl',
-    owner: 'Annette Black',
-    date: DEMO_DATE,
-    start: 14 * 60,
-    end: 14 * 60 + 45,
-    note: 'Luxury buyer appointment synced to calendar.',
-  },
-]
-
 export default function CalendarPage() {
   const { data } = useAppData()
   const [view, setView] = useState<CalendarView>('day')
+  const today = useMemo(() => getTodayDateString(), [])
+  const weekDays = useMemo(() => getWeekDays(today), [today])
+  const monthDays = useMemo(() => getMonthDays(today), [today])
   const calendar = useMemo(
-    () => buildCalendarEvents(data.tasks, data.leads, data.transactions),
-    [data.leads, data.tasks, data.transactions],
+    () => buildCalendarEvents(data.tasks, data.leads, data.transactions, today),
+    [data.leads, data.tasks, data.transactions, today],
   )
   const conflicts = calendar.filter((event) => event.conflict || event.outsideAvailability)
   const taskEvents = calendar.filter((event) => event.source === 'task')
@@ -142,7 +122,7 @@ export default function CalendarPage() {
           >
             <div className="flex items-center justify-between border-b border-gray-100 px-6 py-5">
               <div>
-                <p className="text-sm font-bold text-gray-900">Saturday, April 18</p>
+                <p className="text-sm font-bold text-gray-900">{formatDateHeading(today)}</p>
                 <p className="text-xs text-gray-400">AI calendar draft for James Carter</p>
               </div>
               <Badge className="border-0 bg-emerald-50 text-emerald-700">
@@ -150,9 +130,9 @@ export default function CalendarPage() {
               </Badge>
             </div>
 
-            {view === 'day' && <DayView events={calendar} />}
-            {view === 'week' && <WeekView events={calendar} />}
-            {view === 'month' && <MonthView events={calendar} />}
+            {view === 'day' && <DayView events={calendar} selectedDate={today} />}
+            {view === 'week' && <WeekView events={calendar} selectedDate={today} weekDays={weekDays} />}
+            {view === 'month' && <MonthView events={calendar} selectedDate={today} monthDays={monthDays} />}
           </section>
 
           <div
@@ -201,6 +181,7 @@ function buildCalendarEvents(
   tasks: Task[],
   leads: { id: string; name: string }[],
   transactions: { id: string; address: string; daysUntilDeadline: number; nextDeadlineLabel: string }[],
+  selectedDate: string,
 ): CalendarEvent[] {
   const taskEvents: CalendarEvent[] = tasks.map((task, index) => {
     const lead = task.leadId ? leads.find((item) => item.id === task.leadId) : null
@@ -210,7 +191,7 @@ function buildCalendarEvents(
       source: 'task',
       title: task.title,
       owner: lead?.name ?? 'Lofty task',
-      date: DEMO_DATE,
+      date: resolveTaskDate(task, selectedDate),
       start,
       end: start + 30,
       aiAdded: true,
@@ -228,13 +209,13 @@ function buildCalendarEvents(
       source: 'deadline',
       title: tx.nextDeadlineLabel,
       owner: tx.address.split(',')[0],
-      date: tx.daysUntilDeadline === 1 ? '2026-04-19' : DEMO_DATE,
+      date: addDays(selectedDate, tx.daysUntilDeadline),
       start: 16 * 60,
       end: 16 * 60 + 30,
       note: 'Transaction deadline added for visibility.',
     }))
 
-  const combined = [...taskEvents, ...appointments, ...deadlineEvents]
+  const combined = [...taskEvents, ...buildStaticAppointments(selectedDate), ...deadlineEvents]
   return combined.map((event, _index, all) => {
     const overlaps = all.some((other) =>
       other.id !== event.id &&
@@ -253,12 +234,123 @@ function buildCalendarEvents(
   })
 }
 
+function buildStaticAppointments(selectedDate: string): CalendarEvent[] {
+  return [
+    {
+      id: 'appt-robert-11',
+      source: 'appointment',
+      title: 'Showing: 182 Saint Peter St',
+      owner: 'Robert Nguyen',
+      date: selectedDate,
+      start: 11 * 60,
+      end: 11 * 60 + 45,
+      note: 'Client showing already booked from IDX request.',
+    },
+    {
+      id: 'appt-annette-2',
+      source: 'appointment',
+      title: 'Showing: 26096 Dougherty Pl',
+      owner: 'Annette Black',
+      date: selectedDate,
+      start: 14 * 60,
+      end: 14 * 60 + 45,
+      note: 'Luxury buyer appointment synced to calendar.',
+    },
+  ]
+}
+
 function resolveTaskStart(task: Task, index: number) {
+  const scheduledMinutes = minutesFromScheduledFor(task.scheduledFor)
+  if (scheduledMinutes !== null) return scheduledMinutes
   if (task.dueTime === '10:00 AM') return 10 * 60
   if (task.dueTime === '11:00 AM') return 11 * 60
   if (task.dueTime === '12:00 PM') return 12 * 60
   if (task.dueTime === '2:00 PM') return 14 * 60
   return 9 * 60 + (index + 1) * 30
+}
+
+function resolveTaskDate(task: Task, selectedDate: string) {
+  return dateFromScheduledFor(task.scheduledFor) ?? selectedDate
+}
+
+function minutesFromScheduledFor(value?: string) {
+  if (!value) return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  return date.getHours() * 60 + date.getMinutes()
+}
+
+function dateFromScheduledFor(value?: string) {
+  if (!value) return null
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return null
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getTodayDateString() {
+  return dateToDateString(new Date())
+}
+
+function getWeekDays(selectedDate: string): WeekDay[] {
+  const selected = dateStringToLocalDate(selectedDate)
+  const monday = new Date(selected)
+  const day = selected.getDay()
+  const offset = day === 0 ? -6 : 1 - day
+  monday.setDate(selected.getDate() + offset)
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(monday)
+    date.setDate(monday.getDate() + index)
+    return {
+      label: date.toLocaleDateString(undefined, { weekday: 'short' }),
+      date: dateToDateString(date),
+      day: date.getDate(),
+    }
+  })
+}
+
+function getMonthDays(selectedDate: string): MonthDay[] {
+  const selected = dateStringToLocalDate(selectedDate)
+  const year = selected.getFullYear()
+  const month = selected.getMonth()
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+
+  return Array.from({ length: daysInMonth }, (_, index) => {
+    const date = new Date(year, month, index + 1)
+    return {
+      date: dateToDateString(date),
+      day: index + 1,
+    }
+  })
+}
+
+function addDays(dateString: string, days: number) {
+  const date = dateStringToLocalDate(dateString)
+  date.setDate(date.getDate() + days)
+  return dateToDateString(date)
+}
+
+function dateStringToLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function dateToDateString(date: Date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function formatDateHeading(dateString: string) {
+  return dateStringToLocalDate(dateString).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+  })
 }
 
 function isInsideAvailability(start: number, end: number) {
@@ -280,8 +372,8 @@ function findSuggestedStart(event: CalendarEvent, all: CalendarEvent[]) {
   return undefined
 }
 
-function DayView({ events }: { events: CalendarEvent[] }) {
-  const dayEvents = events.filter((event) => event.date === DEMO_DATE)
+function DayView({ events, selectedDate }: { events: CalendarEvent[]; selectedDate: string }) {
+  const dayEvents = events.filter((event) => event.date === selectedDate)
 
   return (
     <div className="divide-y divide-gray-100">
@@ -306,14 +398,22 @@ function DayView({ events }: { events: CalendarEvent[] }) {
   )
 }
 
-function WeekView({ events }: { events: CalendarEvent[] }) {
+function WeekView({
+  events,
+  selectedDate,
+  weekDays,
+}: {
+  events: CalendarEvent[]
+  selectedDate: string
+  weekDays: WeekDay[]
+}) {
   return (
     <div className="overflow-x-auto">
       <div className="grid min-w-[960px] grid-cols-7 divide-x divide-gray-100">
-        {WEEK_DAYS.map((day) => {
+        {weekDays.map((day) => {
           const dayEvents = events.filter((event) => event.date === day.date)
           return (
-            <div key={day.date} className={day.date === DEMO_DATE ? 'bg-blue-50/30' : ''}>
+            <div key={day.date} className={day.date === selectedDate ? 'bg-blue-50/30' : ''}>
               <div className="border-b border-gray-100 px-4 py-4">
                 <p className="text-xs font-semibold text-gray-400">{day.label}</p>
                 <p className="text-lg font-bold text-gray-900">{day.day}</p>
@@ -331,16 +431,23 @@ function WeekView({ events }: { events: CalendarEvent[] }) {
   )
 }
 
-function MonthView({ events }: { events: CalendarEvent[] }) {
+function MonthView({
+  events,
+  selectedDate,
+  monthDays,
+}: {
+  events: CalendarEvent[]
+  selectedDate: string
+  monthDays: MonthDay[]
+}) {
   return (
     <div className="grid grid-cols-7 gap-px bg-gray-100 p-px">
-      {MONTH_DAYS.map((day) => {
-        const date = `2026-04-${String(day).padStart(2, '0')}`
+      {monthDays.map(({ date, day }) => {
         const dayEvents = events.filter((event) => event.date === date)
         return (
           <div
             key={day}
-            className={`min-h-32 bg-white p-3 ${date === DEMO_DATE ? 'ring-2 ring-inset ring-[#1a6bcc]' : ''}`}
+            className={`min-h-32 bg-white p-3 ${date === selectedDate ? 'ring-2 ring-inset ring-[#1a6bcc]' : ''}`}
           >
             <p className="mb-2 text-xs font-bold text-gray-700">{day}</p>
             <div className="space-y-1">

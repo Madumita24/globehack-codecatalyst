@@ -146,6 +146,14 @@ export function AssistantProvider({ children }: { children: ReactNode }) {
           },
         ])
 
+        if (
+          decision.communication?.channel === 'sms' &&
+          decision.communication.deliveryStatus === 'prepared' &&
+          decision.communication.launchHref
+        ) {
+          window.location.href = decision.communication.launchHref
+        }
+
         if (decision.targetRoute) {
           setStatus('navigating')
           const href = decision.highlight && decision.targetId

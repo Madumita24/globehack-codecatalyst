@@ -49,7 +49,7 @@ export type AssistantCommunication = {
   recipientPhone: string | null
   subject: string | null
   body: string
-  deliveryStatus: 'pending' | 'accepted' | 'sent' | 'failed'
+  deliveryStatus: 'pending' | 'prepared' | 'sent' | 'failed'
   messageId: string | null
   launchHref: string | null
   error: string | null

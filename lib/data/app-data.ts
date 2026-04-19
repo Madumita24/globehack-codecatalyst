@@ -201,6 +201,7 @@ function mapTask(item: RawItem): Task | null {
     title: action.title,
     leadId: action.leadId,
     dueTime: formatDueTime(action.scheduledFor),
+    scheduledFor: action.scheduledFor,
     completed: action.status === 'done',
   }
 }

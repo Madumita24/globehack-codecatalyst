@@ -47,5 +47,6 @@ export type Task = {
   title: string
   leadId?: string
   dueTime?: string
+  scheduledFor?: string
   completed: boolean
 }
