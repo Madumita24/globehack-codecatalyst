@@ -1,6 +1,9 @@
 import type { Lead } from '@/types/lead'
 import type { Property } from '@/types/property'
-import type { RecommendedAction, Transaction, Task } from '@/types/action'
+import type { Transaction, Task } from '@/types/action'
+import type { LeadEvent } from '@/types/event'
+
+// ─── Leads ────────────────────────────────────────────────────────────────────
 
 export const mockLeads: Lead[] = [
   {
@@ -14,10 +17,15 @@ export const mockLeads: Lead[] = [
     preferredAreas: ['Palo Alto', 'Menlo Park', 'Los Altos'],
     preferences: { minBeds: 3, maxBeds: 4, minBaths: 2, propertyTypes: ['Single Family'] },
     lastContactDaysAgo: 5,
-    recentBehavior: ['Viewed 123 Maple Ave 3 times in 24h', 'Saved 2 listings', 'Used mortgage calculator'],
+    recentBehavior: [
+      'Viewed 123 Maple Ave 3 times in the last 24 hours',
+      'Saved 87 Valencia St to favorites',
+      'Used mortgage calculator — $950k range',
+    ],
     intentSignals: ['high_view_frequency', 'saved_listing', 'mortgage_calc'],
     assignedAgent: 'James Carter',
     source: 'IDX Website',
+    engagementLevel: 'high',
   },
   {
     id: 'l2',
@@ -30,10 +38,14 @@ export const mockLeads: Lead[] = [
     preferredAreas: ['Sunnyvale', 'Santa Clara', 'Mountain View'],
     preferences: { minBeds: 2, maxBeds: 3, minBaths: 2, propertyTypes: ['Condo', 'Townhouse'] },
     lastContactDaysAgo: 8,
-    recentBehavior: ['Back on site after 6-day absence', 'Viewed 3 condos'],
+    recentBehavior: [
+      'Back on site after 6-day absence',
+      'Viewed 2118 Thornridge Cir twice this morning',
+    ],
     intentSignals: ['back_to_site', 'increased_search_frequency'],
     assignedAgent: 'James Carter',
     source: 'Facebook Ads',
+    engagementLevel: 'medium',
   },
   {
     id: 'l3',
@@ -46,10 +58,14 @@ export const mockLeads: Lead[] = [
     preferredAreas: ['Los Altos Hills', 'Saratoga', 'Monte Sereno'],
     preferences: { minBeds: 4, maxBeds: 5, minBaths: 3, propertyTypes: ['Single Family', 'Estate'] },
     lastContactDaysAgo: 2,
-    recentBehavior: ['Requested home valuation', 'Viewed 5 luxury listings'],
+    recentBehavior: [
+      'Requested home valuation 2 days ago',
+      'Viewed 5 luxury listings this week',
+    ],
     intentSignals: ['valuation_request', 'luxury_segment'],
     assignedAgent: 'James Carter',
     source: 'Google Ads',
+    engagementLevel: 'medium',
   },
   {
     id: 'l4',
@@ -62,10 +78,14 @@ export const mockLeads: Lead[] = [
     preferredAreas: ['East Palo Alto', 'Redwood City'],
     preferences: { minBeds: 2, maxBeds: 3, minBaths: 1, propertyTypes: ['Condo', 'Single Family'] },
     lastContactDaysAgo: 0,
-    recentBehavior: ['Just registered', 'Browsed 8 listings'],
+    recentBehavior: [
+      'Just registered — browsed 8 listings',
+      'Refined search by price range 3 times',
+    ],
     intentSignals: ['new_lead', 'high_browse_count'],
     assignedAgent: 'James Carter',
     source: 'IDX Website',
+    engagementLevel: 'medium',
   },
   {
     id: 'l5',
@@ -82,6 +102,7 @@ export const mockLeads: Lead[] = [
     intentSignals: ['cooling_down'],
     assignedAgent: 'James Carter',
     source: 'Open House',
+    engagementLevel: 'none',
   },
   {
     id: 'l6',
@@ -94,12 +115,101 @@ export const mockLeads: Lead[] = [
     preferredAreas: ['Campbell', 'Los Gatos', 'Saratoga'],
     preferences: { minBeds: 3, maxBeds: 4, minBaths: 2, propertyTypes: ['Single Family'] },
     lastContactDaysAgo: 3,
-    recentBehavior: ['Scheduled a showing', 'Viewed 7 listings this week'],
+    recentBehavior: [
+      'Requested a showing for 182 Saint Peter St',
+      'Viewed 7 listings this week',
+    ],
     intentSignals: ['showing_request', 'high_intent'],
     assignedAgent: 'James Carter',
     source: 'Zillow',
+    engagementLevel: 'high',
+  },
+  {
+    id: 'l7',
+    name: 'Jennifer Walsh',
+    email: 'j.walsh@gmail.com',
+    phone: '(650) 555-0482',
+    stage: 'hot',
+    score: 79,
+    budget: 820000,
+    preferredAreas: ['Menlo Park', 'Redwood City', 'East Palo Alto'],
+    preferences: { minBeds: 3, maxBeds: 4, minBaths: 2, propertyTypes: ['Single Family', 'Townhouse'] },
+    lastContactDaysAgo: 7,
+    recentBehavior: [
+      'Back on site after 4-day absence',
+      'Opened price drop alert for 87 Valencia St',
+      'Viewed competitor listings on Zillow',
+    ],
+    intentSignals: ['back_to_site', 'price_drop_alert', 'high_intent'],
+    assignedAgent: 'James Carter',
+    source: 'Zillow',
+    engagementLevel: 'high',
+  },
+  {
+    id: 'l8',
+    name: 'Carlos Mendez',
+    email: 'carlos.mendez@gmail.com',
+    phone: '(408) 555-0163',
+    stage: 'active',
+    score: 71,
+    budget: 760000,
+    preferredAreas: ['Mountain View', 'Sunnyvale', 'Santa Clara'],
+    preferences: { minBeds: 2, maxBeds: 3, minBaths: 2, propertyTypes: ['Condo', 'Townhouse'] },
+    lastContactDaysAgo: 4,
+    recentBehavior: [
+      'Uploaded pre-approval letter — approved for $760k',
+      'Requested showing for 2118 Thornridge Cir',
+      'Viewed 4 condos this week',
+    ],
+    intentSignals: ['pre_approved', 'showing_request', 'increased_search_frequency'],
+    assignedAgent: 'James Carter',
+    source: 'Google Ads',
+    engagementLevel: 'high',
+  },
+  {
+    id: 'l9',
+    name: 'Emily Kwan',
+    email: 'emily.kwan@icloud.com',
+    phone: '(415) 555-0837',
+    stage: 'nurturing',
+    score: 55,
+    budget: 650000,
+    preferredAreas: ['Redwood City', 'Palo Alto', 'East Palo Alto'],
+    preferences: { minBeds: 2, maxBeds: 3, minBaths: 1, propertyTypes: ['Condo', 'Single Family'] },
+    lastContactDaysAgo: 12,
+    recentBehavior: [
+      'Opened 2 drip campaign emails',
+      'Browsed 3 listings in the $600–650k range',
+    ],
+    intentSignals: ['email_replied', 'referral'],
+    assignedAgent: 'James Carter',
+    source: 'Referral',
+    engagementLevel: 'low',
+  },
+  {
+    id: 'l10',
+    name: 'Tom Bradley',
+    email: 'tbradley@yahoo.com',
+    phone: '(510) 555-0055',
+    stage: 'active',
+    score: 66,
+    budget: 590000,
+    preferredAreas: ['Fremont', 'Newark', 'Union City'],
+    preferences: { minBeds: 2, maxBeds: 3, minBaths: 1, propertyTypes: ['Condo', 'Townhouse'] },
+    lastContactDaysAgo: 6,
+    recentBehavior: [
+      'Used mortgage affordability calculator',
+      'Saved 3 listings under $600k',
+      'Requested virtual tour of a Newark condo',
+    ],
+    intentSignals: ['mortgage_calc', 'saved_listing', 'increased_search_frequency'],
+    assignedAgent: 'James Carter',
+    source: 'IDX Website',
+    engagementLevel: 'medium',
   },
 ]
+
+// ─── Properties ───────────────────────────────────────────────────────────────
 
 export const mockProperties: Property[] = [
   {
@@ -192,24 +302,199 @@ export const mockProperties: Property[] = [
     daysOnMarket: 6,
     mlsNumber: 'ML81927761',
   },
+  {
+    id: 'p7',
+    address: '445 Oak Glen Rd',
+    city: 'Redwood City',
+    state: 'CA',
+    zip: '94061',
+    price: 790000,
+    beds: 3,
+    baths: 2,
+    sqft: 1520,
+    tags: ['remodeled bathrooms', 'attached garage', 'cul-de-sac'],
+    status: 'back_on_market',
+    daysOnMarket: 22,
+    mlsNumber: 'ML81920447',
+  },
+  {
+    id: 'p8',
+    address: '1102 Elm Court',
+    city: 'Mountain View',
+    state: 'CA',
+    zip: '94040',
+    price: 755000,
+    beds: 2,
+    baths: 2,
+    sqft: 1180,
+    tags: ['smart home', 'rooftop deck', 'near Caltrain'],
+    status: 'active',
+    daysOnMarket: 3,
+    mlsNumber: 'ML81932018',
+  },
 ]
+
+// ─── Events ───────────────────────────────────────────────────────────────────
+// Timestamps anchored to 2026-04-18 (hackathon demo date)
+
+export const mockEvents: LeadEvent[] = [
+  // Sarah Johnson (l1) — 3 views of p1 + saved p2 + mortgage calc (all in last 48h)
+  {
+    id: 'e1',
+    leadId: 'l1',
+    type: 'listing_view',
+    description: 'Viewed 123 Maple Ave listing page',
+    occurredAt: '2026-04-18T09:15:00Z',
+    propertyId: 'p1',
+    metadata: { viewDurationSeconds: 312 },
+  },
+  {
+    id: 'e2',
+    leadId: 'l1',
+    type: 'listing_view',
+    description: 'Viewed 123 Maple Ave listing page again',
+    occurredAt: '2026-04-17T21:40:00Z',
+    propertyId: 'p1',
+    metadata: { viewDurationSeconds: 284 },
+  },
+  {
+    id: 'e3',
+    leadId: 'l1',
+    type: 'listing_view',
+    description: 'Third view of 123 Maple Ave in 24 hours',
+    occurredAt: '2026-04-17T14:05:00Z',
+    propertyId: 'p1',
+    metadata: { viewDurationSeconds: 198 },
+  },
+  {
+    id: 'e4',
+    leadId: 'l1',
+    type: 'listing_save',
+    description: 'Saved 87 Valencia St to favorites',
+    occurredAt: '2026-04-17T22:10:00Z',
+    propertyId: 'p2',
+  },
+  {
+    id: 'e5',
+    leadId: 'l1',
+    type: 'mortgage_calc_used',
+    description: 'Used mortgage calculator — $950k range, 20% down',
+    occurredAt: '2026-04-18T09:22:00Z',
+    metadata: { targetPrice: 950000, downPaymentPct: 20 },
+  },
+  // Mike Reyes (l2) — back on site + 2 condo views
+  {
+    id: 'e6',
+    leadId: 'l2',
+    type: 'back_to_site',
+    description: 'Returned to IDX site after 6-day absence',
+    occurredAt: '2026-04-18T07:45:00Z',
+    metadata: { daysAbsent: 6 },
+  },
+  {
+    id: 'e7',
+    leadId: 'l2',
+    type: 'listing_view',
+    description: 'Viewed 2118 Thornridge Cir',
+    occurredAt: '2026-04-18T08:00:00Z',
+    propertyId: 'p3',
+  },
+  {
+    id: 'e8',
+    leadId: 'l2',
+    type: 'listing_view',
+    description: 'Viewed 2118 Thornridge Cir a second time',
+    occurredAt: '2026-04-18T08:20:00Z',
+    propertyId: 'p3',
+  },
+  // Robert Nguyen (l6) — showing request + prior listing view
+  {
+    id: 'e9',
+    leadId: 'l6',
+    type: 'showing_request',
+    description: 'Requested showing for 182 Saint Peter St',
+    occurredAt: '2026-04-17T15:30:00Z',
+    propertyId: 'p5',
+  },
+  {
+    id: 'e10',
+    leadId: 'l6',
+    type: 'listing_view',
+    description: 'Viewed 182 Saint Peter St listing',
+    occurredAt: '2026-04-16T19:00:00Z',
+    propertyId: 'p5',
+  },
+  // Jennifer Walsh (l7) — back to site + price drop alert
+  {
+    id: 'e11',
+    leadId: 'l7',
+    type: 'back_to_site',
+    description: 'Returned to site after 4-day absence',
+    occurredAt: '2026-04-18T06:30:00Z',
+    metadata: { daysAbsent: 4 },
+  },
+  {
+    id: 'e12',
+    leadId: 'l7',
+    type: 'price_drop_alert_opened',
+    description: 'Opened price drop alert for 87 Valencia St',
+    occurredAt: '2026-04-18T06:35:00Z',
+    propertyId: 'p2',
+  },
+  // Carlos Mendez (l8) — pre-approval upload + showing request
+  {
+    id: 'e13',
+    leadId: 'l8',
+    type: 'pre_approval_uploaded',
+    description: 'Uploaded mortgage pre-approval letter — approved for $760k',
+    occurredAt: '2026-04-17T11:00:00Z',
+    metadata: { approvedAmount: 760000 },
+  },
+  {
+    id: 'e14',
+    leadId: 'l8',
+    type: 'showing_request',
+    description: 'Requested showing for 2118 Thornridge Cir',
+    occurredAt: '2026-04-17T11:15:00Z',
+    propertyId: 'p3',
+  },
+  // Annette Black (l3) — valuation request
+  {
+    id: 'e15',
+    leadId: 'l3',
+    type: 'valuation_request',
+    description: 'Submitted home valuation request for current property',
+    occurredAt: '2026-04-16T10:20:00Z',
+    metadata: { estimatedValue: 1150000 },
+  },
+  // Tom Bradley (l10) — virtual tour request
+  {
+    id: 'e16',
+    leadId: 'l10',
+    type: 'virtual_tour_requested',
+    description: 'Requested virtual tour for a Newark condo',
+    occurredAt: '2026-04-17T09:00:00Z',
+  },
+]
+
+// ─── Transactions ─────────────────────────────────────────────────────────────
 
 export const mockTransactions: Transaction[] = [
   {
-    id: 't1',
+    id: 'tx1',
     address: '3931 Via Montalvo, Campbell, CA 95008',
     stage: 'inspection',
     closingDate: '2026-05-10',
     nextDeadline: '2026-04-20',
-    nextDeadlineLabel: 'Inspection deadline',
+    nextDeadlineLabel: 'Inspection contingency deadline',
     leadId: 'l6',
     agentName: 'James Carter',
     salePrice: 870000,
     daysUntilDeadline: 2,
   },
   {
-    id: 't2',
-    address: '87 Valencia St, Half Moon Bay, CA 94019',
+    id: 'tx2',
+    address: '87 Valencia St, Menlo Park, CA 94025',
     stage: 'appraisal',
     closingDate: '2026-04-28',
     nextDeadline: '2026-04-19',
@@ -220,18 +505,20 @@ export const mockTransactions: Transaction[] = [
     daysUntilDeadline: 1,
   },
   {
-    id: 't3',
-    address: '2118 Thornridge Cir, Syracuse, CT 35...',
+    id: 'tx3',
+    address: '2118 Thornridge Cir, Sunnyvale, CA 94086',
     stage: 'closing',
     closingDate: '2026-04-22',
     nextDeadline: '2026-04-22',
-    nextDeadlineLabel: 'Closing date',
+    nextDeadlineLabel: 'Final walkthrough + closing',
     leadId: 'l1',
     agentName: 'James Carter',
     salePrice: 735000,
     daysUntilDeadline: 4,
   },
 ]
+
+// ─── Tasks ────────────────────────────────────────────────────────────────────
 
 export const mockTasks: Task[] = [
   {
@@ -245,15 +532,15 @@ export const mockTasks: Task[] = [
   {
     id: 'task2',
     type: 'call',
-    title: 'Call-back follow up',
+    title: 'Confirm showing details',
     leadId: 'l6',
     dueTime: 'Anytime',
-    completed: true,
+    completed: false,
   },
   {
     id: 'task3',
     type: 'email',
-    title: 'Spanish speaking only follow up',
+    title: 'Spanish-language follow-up email',
     leadId: 'l5',
     dueTime: '12:00 PM',
     completed: false,
@@ -261,12 +548,22 @@ export const mockTasks: Task[] = [
   {
     id: 'task4',
     type: 'text',
-    title: 'Send listing info',
+    title: 'Send listing details to new lead',
     leadId: 'l4',
     dueTime: '2:00 PM',
     completed: false,
   },
+  {
+    id: 'task5',
+    type: 'email',
+    title: 'Follow up on valuation request',
+    leadId: 'l3',
+    dueTime: '11:00 AM',
+    completed: false,
+  },
 ]
+
+// ─── Agent profile ────────────────────────────────────────────────────────────
 
 export const agentProfile = {
   name: 'James Carter',

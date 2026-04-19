@@ -1,5 +1,7 @@
 export type LeadStage = 'new' | 'nurturing' | 'hot' | 'active' | 'cold'
 
+export type EngagementLevel = 'high' | 'medium' | 'low' | 'none'
+
 export type Lead = {
   id: string
   name: string
@@ -20,5 +22,6 @@ export type Lead = {
   intentSignals: string[]
   assignedAgent: string
   source: string
+  engagementLevel?: EngagementLevel
   avatar?: string
 }
